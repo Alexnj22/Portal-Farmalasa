@@ -1684,6 +1684,9 @@ export default function ConteoDetailView() {
     // audita con unidades. La valuación en dinero es la lectura contable y va
     // aparte — quien cuenta no necesita saber cuánto vale el faltante.
     const canVerMontos = hasPermission('conteo_inventario_ver_montos');
+    // Recontar sin aprobar: revisar las diferencias y firmar el conteo son dos
+    // cosas, y la segunda la hace otra persona.
+    const canRecontar = canApprove || hasPermission('conteo_inventario_recontar');
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
     const fetchConteoPagina = useStaffStore((s) => s.fetchConteoPagina);
@@ -2072,7 +2075,7 @@ export default function ConteoDetailView() {
     // salía igual y se enteraba al abrir el diálogo.
     const loFinalizoYo = !!conteo?.finalizado_por && String(conteo.finalizado_por) === String(user?.id);
     const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove && !loFinalizoYo;
-    const puedeRecontar = conteo?.status === 'FINALIZADO' && canApprove;
+    const puedeRecontar = conteo?.status === 'FINALIZADO' && canRecontar;
     const hasResults = conteo && ['FINALIZADO', 'CERRADO'].includes(conteo.status);
 
     // Borrar tiene dos niveles y la RPC los aplica igual: acá solo se decide si

@@ -1029,7 +1029,7 @@ export const AREAS = [
         nombre: 'Inventario, conteo y ventas perdidas',
         resumen: 'La existencia por sala: consulta, gestión de stock, ajustes, conteo cíclico a ciegas y el registro de lo que no se pudo vender.',
         modulos: ['inventario', 'gestion_stock', 'conteo_inventario', 'conteo_ver_sistema',
-                  'conteo_inventario_descargar', 'conteo_inventario_ver_montos', 'conteo_inventario_eliminar',
+                  'conteo_inventario_descargar', 'conteo_inventario_ver_montos', 'conteo_inventario_eliminar', 'conteo_inventario_recontar',
                   'ventas_perdidas', 'ventas_perdidas_descargar'],
         rutas: ['/inventario', '/gestion-stock', '/conteo-inventario', '/conteo-inventario/:id',
                 '/ventas-perdidas'],

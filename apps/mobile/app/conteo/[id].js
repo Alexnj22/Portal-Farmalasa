@@ -409,8 +409,11 @@ export default function Conteo() {
 
   const puedeEditar = hasPermission('conteo_inventario', 'can_edit');
   const editable = conteoEditable(conteo) && puedeEditar;
-  // Mismas condiciones que el portal: aprobar y recontar, finalizado y con can_approve.
+  // Mismas condiciones que el portal: aprobar pide can_approve; recontar, eso o
+  // el permiso propio `conteo_inventario_recontar` (revisa sin poder firmar).
   const puedeAprobar = conteo?.status === 'FINALIZADO' && hasPermission('conteo_inventario', 'can_approve');
+  const puedeRecontar = conteo?.status === 'FINALIZADO'
+    && (hasPermission('conteo_inventario', 'can_approve') || hasPermission('conteo_inventario_recontar'));
   const simple = conteo?.modo === 'SIMPLE';
   const verSistema = resumen?.ver_sistema ?? productos.filas.some((p) => p.ver_sistema);
   const filtros = FILTROS_CONTEO.filter((f) => !f.soloConSistema || verSistema);
@@ -777,12 +780,15 @@ export default function Conteo() {
             </View>
           ) : null}
           {avisoParcial ? <View style={{ marginHorizontal: 16 }}><Aviso tono={conteo.pendientes_como_cero ? 'cuidado' : 'freno'} texto={avisoParcial} /></View> : null}
-          {conteo && !editable && !puedeAprobar ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={conteoEditable(conteo) ? 'Tu cargo no puede contar en este conteo.' : 'Este conteo ya no se puede contar.'} /></View> : null}
-          {puedeAprobar ? (
+          {conteo && !editable && !puedeRecontar ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={conteoEditable(conteo) ? 'Tu cargo no puede contar en este conteo.' : 'Este conteo ya no se puede contar.'} /></View> : null}
+          {puedeRecontar ? (
             <View style={{ marginHorizontal: 16, gap: 10 }}>
-              <Aviso tono="nota" texto="Ya está finalizado. Puedes recontar un producto antes de aprobar. Quien lo contó no puede recontarlo." />
+              <Aviso tono="nota" texto={puedeAprobar
+                ? 'Ya está finalizado. Puedes recontar un producto antes de aprobar. Quien lo contó no puede recontarlo.'
+                : 'Ya está finalizado. Puedes recontar los productos con diferencia. Lo aprueba otra persona.'} />
               {/* Quien finalizó no puede aprobar: la base lo rechaza. */}
-              {String(conteo.finalizado_por ?? '') === String(user?.id ?? '-')
+              {!puedeAprobar ? null
+                : String(conteo.finalizado_por ?? '') === String(user?.id ?? '-')
                 ? <Aviso tono="nota" texto="Lo finalizaste tú. Lo aprueba otra persona." />
                 : <BotonGrande texto="Aprobar el conteo" color={MARCA.verde} onPress={aprobar} />}
               {/* El recuento del supervisor: queda en «Con diferencia» —es lo que
@@ -912,7 +918,7 @@ export default function Conteo() {
                         // área de vencidos (2026-11-24): el lote nace en el estante del renglón.
                         onLoteReal={editable && !simple && (!conteo?.aplica_en_caja || !it.es_agregado_manual) ? setLoteReal : null}
                         ajusta={!!conteo?.aplica_en_caja}
-                        onRecontar={puedeAprobar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
+                        onRecontar={puedeRecontar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                   </View>
                 </Vidrio>
               </View>

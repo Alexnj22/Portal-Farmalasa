@@ -401,6 +401,10 @@ const GRUPOS_CRUDOS = [
                 // contar son horas de alguien, y uno finalizado es evidencia
                 // firmada con el nombre de quién contó cada renglón.
                 { key: 'conteo_inventario_eliminar',   label: 'Eliminar un conteo ya empezado o finalizado', tipo: 'cap' },
+                // Recontar sin poder aprobar (2026-11-27): quien revisa las
+                // diferencias no tiene por qué ser quien firma. Aprobar sigue
+                // pidiendo `can_approve` del módulo, que también recuenta.
+                { key: 'conteo_inventario_recontar',   label: 'Recontar un conteo finalizado (sin aprobarlo)', tipo: 'cap' },
             ]},
             // Va pegado al Conteo: las dos describen el estado FÍSICO de lo que
             // hay guardado —una cuenta unidades, la otra vigila las condiciones

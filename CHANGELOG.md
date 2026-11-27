@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.10 — Conteo: recontar sin aprobar
+
+Bodega, 27-nov: el usuario quiere que la Jefa de Compras y Logística revise las
+diferencias del conteo total de Bodega sin poder aprobarlo. El recuento pedía
+`can_approve` del módulo —el mismo permiso que firma—, así que no había forma de
+dar uno sin el otro.
+
+- Capacidad nueva `conteo_inventario_recontar` («Recontar un conteo finalizado
+  (sin aprobarlo)»). `recontar_conteo_item` acepta `can_approve` **o** esta
+  capacidad; aprobar sigue pidiendo `can_approve`. Las demás guardas no cambian:
+  quien contó una línea no la recuenta.
+- Portal y app: el «Modo recuento» sale con cualquiera de los dos; el botón
+  Aprobar, sólo con `can_approve`.
+- Migración `20261127204437_conteo_recontar_sin_aprobar`: la función y el
+  permiso para el cargo Jefe/a de Compras y Logística (id 12).
+
 ## v2.1606.9 — Un corte sólo se reabre el mismo día y la entrega no se pide dos veces
 
 Salud 2, 27-nov: para explicar el sobrante del corte del 26-nov 12:10 se

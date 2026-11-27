@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.16 — «Con diferencia» lista sólo los productos que no cuadran
+
+Bodega, reconteo: «¿por qué al darle en con diferencia me salen 1186
+productos?». La tarjeta decía 184.
+
+- El filtro marcaba un producto en cuanto un renglón tenía diferencia. En un
+  conteo por lote, lo que estaba «sin lote» se contó en sus lotes reales: cada
+  renglón difiere pero el producto cuadra (reacomodo de lote). Ahora además
+  exige que la diferencia neta del producto no sea cero, la misma suma que la
+  fila y la tarjeta.
+- Base (`20261127212413_conteo_filtro_con_diferencia_es_por_producto`):
+  `get_conteo_products_page` y `get_conteo_products_count` (la app usa la
+  misma página por `get_conteo_pagina`). Medido en el conteo de Bodega: 1,186 →
+  181 en bodega y 3 en vencidos = 184.
+- Gemelo: conteo_inventario — el cambio es de la base, portal y app lo leen igual.
+Novedades: no — corrige un número; no cambia cómo se usa.
+
 ## v2.1606.15 — En el recuento se corrige el lote y el vencimiento
 
 Bodega, en pleno reconteo: «¿por qué en el reconteo no se puede modificar lote /

@@ -25,7 +25,7 @@ import { cifraSinCausa } from '@nucleo/utils/diferenciasDeCaja';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverCorte from './useResolverCorte';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 /**
  * El detalle de un corte de caja, y el único sitio donde se confirma o descarta.
@@ -60,7 +60,8 @@ const MOTIVO_SIN_CONTEO = 'No se contó el efectivo';
 // Por qué se reabre una firma. Salen de los casos reales del 13 y 14 de agosto:
 // un corte confirmado sobre un conteo malo (Salud 1, −$621.17), uno que había
 // que descartar porque la sala lo rehizo, y la diferencia que después apareció.
-const MOTIVOS_REABRIR = ['Se firmó por error', 'El corte se rehizo', 'Apareció la causa'];
+// «Apareció la causa» salió el 2026-11-27: una causa se explica sin reabrir.
+const MOTIVOS_REABRIR = ['Se firmó por error', 'El corte se rehizo'];
 
 const TONO_TEXTO = { ok: 'text-success-text', sobra: 'text-warning-text', falta: 'text-danger-text' };
 
@@ -310,7 +311,10 @@ export default function CorteDetalleModal({
     const puedeConfirmar = puedeFirmar && !sinConteo;
     // Reabrir es de la propia sala (decisión del usuario, 2026-08-14): la misma
     // gente que firma puede corregir su firma, escribiendo por qué.
-    const puedeReabrir = !pendiente && !sinDecision && puedeResolver;
+    // Y sólo el día del corte (usuario, 2026-11-27): uno de un día anterior ya
+    // está en su bolsa y su cierre. Lo rechaza también `reabrir_corte_caja`.
+    const puedeReabrir = !pendiente && !sinDecision && puedeResolver
+        && String(visible?.fecha || '') === hoySV();
 
     const abrirReapertura = useCallback(() => {
         setMotivo(MOTIVOS_REABRIR[0]);

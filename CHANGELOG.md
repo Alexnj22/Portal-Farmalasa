@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.9 — Un corte sólo se reabre el mismo día y la entrega no se pide dos veces
+
+Salud 2, 27-nov: para explicar el sobrante del corte del 26-nov 12:10 se
+reabrió (motivo «Apareció la causa») y al confirmarlo otra vez se volvió a
+pedir quién recibía la caja. Ninguna de las dos hacía falta: la causa se anota
+sobre el corte confirmado y la entrega ya estaba hecha. Decisión del usuario:
+«no debe permitir reabrir un corte para arreglarlo, a no ser que sea del mismo
+día».
+
+- `reabrir_corte_caja` rechaza un corte de un día anterior (hora de SV). El
+  botón Reabrir sólo sale el día del corte, en el portal y en la app.
+- Fuera el motivo «Apareció la causa»: una causa se explica sin reabrir.
+- `resolver_corte_caja`: confirmar sin firma un corte que ya tiene su entrega
+  la conserva (quién recibió, cuándo, motivo) y no repite el evento RECIBIR. La
+  pantalla no vuelve a preguntar (`useResolverCorte`, app `corte/[id].js`).
+- Migración `20261127203528`.
+
 ## v2.1606.8 — La diferencia del corte descuenta lo que ya tiene causa
 
 Pedido del usuario (Salud 2, corte del 26-nov 12:10): con +$11.85 de sobrante

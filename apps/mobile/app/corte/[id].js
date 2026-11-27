@@ -53,7 +53,8 @@ import { comprobanteDelCorte, etiquetaDeLaBolsa } from '../../componentes/cortes
 
 const MOTIVOS = ['Conteo de prueba', 'Se contó mal', 'Corte repetido'];
 const MOTIVO_SIN_CONTEO = 'No se contó el efectivo';
-const MOTIVOS_REABRIR = ['Se firmó por error', 'El corte se rehizo', 'Apareció la causa'];
+// «Apareció la causa» salió el 2026-11-27: una causa se explica sin reabrir.
+const MOTIVOS_REABRIR = ['Se firmó por error', 'El corte se rehizo'];
 const TONO = { ok: MARCA.verde, sobra: MARCA.ambar, falta: MARCA.rojo };
 const conSigno = (n) => (n > 0 ? `+${formatMoney(n)}` : n < 0 ? `−${formatMoney(Math.abs(n))}` : formatMoney(0));
 
@@ -194,6 +195,8 @@ export default function Corte() {
   };
 
   const confirmar = async () => {
+    // Reabierto: la entrega ya está anotada y la base la conserva (2026-11-27).
+    if (corte.entrega) { await terminar(await escribir('CONFIRMADO'), false); return; }
     const cerro = await salaYaCerro(corte.branch_id);
     if (cerro === true) { await terminar(await escribir('CONFIRMADO'), true); return; }
     setModo('entrega');   // la caja se entrega a alguien, o se dice por qué no
@@ -421,7 +424,7 @@ export default function Corte() {
               <BotonGrande texto="Descartar" borde color={MARCA.rojo} onPress={() => { setMotivo(MOTIVOS[0]); setModo('descartar'); }} />
               {sinConteo ? <Aviso tono="nota" texto="Un corte sin conteo no se confirma. Descártalo y que la sucursal haga uno contando el efectivo." /> : null}
             </View>
-          ) : !pendiente && !esZ && !esX ? (
+          ) : !pendiente && !esZ && !esX && String(corte.fecha || '') === hoySV() ? (
             <BotonGrande texto="Reabrir la firma" borde color={MARCA.ambar} onPress={() => { setMotivo(MOTIVOS_REABRIR[0]); setModo('reabrir'); }} />
           ) : null}
         </ScrollView>

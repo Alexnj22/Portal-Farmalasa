@@ -357,6 +357,11 @@ export default function useResolverCorte({ nombreSala = {}, origen = 'modulo' } 
          *
          * `null` es «no se pudo saber», y ahí SÍ se pregunta: dar por cerrado
          * lo que no se pudo mirar es cómo un control se apaga solo. */
+        /* Reabierto y confirmado de nuevo (2026-11-27): la entrega ya quedó
+         * anotada la primera vez y `resolver_corte_caja` la conserva. Volver a
+         * pedirla era preguntar algo que ya está decidido. */
+        if (corte.entrega) return escribir(corte, estado, opts);
+
         const cerro = await salaYaCerro(corte.branch_id);
         if (cerro === true) {
             const ok = await escribir(corte, estado, opts);

@@ -1686,7 +1686,8 @@ export default function ConteoDetailView() {
     const canVerMontos = hasPermission('conteo_inventario_ver_montos');
     // Recontar sin aprobar: revisar las diferencias y firmar el conteo son dos
     // cosas, y la segunda la hace otra persona.
-    const canRecontar = canApprove || hasPermission('conteo_inventario_recontar');
+    const canRecontarPropio = hasPermission('conteo_inventario_recontar');
+    const canRecontar = canApprove || canRecontarPropio;
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
     const fetchConteoPagina = useStaffStore((s) => s.fetchConteoPagina);
@@ -2733,7 +2734,7 @@ export default function ConteoDetailView() {
 
                 {recuento && (
                     <Notice variant="info" icon={ShieldCheck}>
-                        Vuelve a contar los productos <strong>con diferencia</strong>, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo. No puedes recontar lo que contaste tú.
+                        Vuelve a contar los productos <strong>con diferencia</strong>, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo.{canRecontarPropio ? ' Puedes recontar también lo que contaste tú.' : ' No puedes recontar lo que contaste tú.'}
                     </Notice>
                 )}
 

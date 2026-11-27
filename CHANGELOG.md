@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.12 — Conteo: recontar también lo propio
+
+Pedido del usuario, 27-nov: la Jefa de Compras y Logística recuenta TODO el
+conteo de Bodega, incluido lo que contó ella. El registro no se pierde:
+`contado_por` dice quién contó y `recontado_por` + el evento RECUENTO del
+historial, quién recontó.
+
+- `recontar_conteo_item`: la guarda «quien contó no recuenta» no aplica a quien
+  tiene `conteo_inventario_recontar`. A los aprobadores les sigue aplicando.
+- Portal y app: el aviso del modo recuento lo dice según el permiso.
+- Migración `20261127204838_conteo_recontar_lo_propio_con_permiso`.
+
 ## v2.1606.11 — Corregir el vencimiento de un perecedero sin lote
 
 27-nov, reclamo del usuario: «Corregir lote o vencimiento» no dejaba tocar NUT

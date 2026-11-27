@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.5 — Los bonificados de Imberton entran al costo de su producto
+
+- Imberton cobra los renglones «BONIF*» a precio lleno y los resta al pie como
+  «Bonificación» (CCF 17725: 7.95 + 3.97 + 3.97 = $15.89). La carga lo tomaba
+  como descuento de la factura: bajaba 2.44 % a todos los productos y los
+  bonificados entraban como pagados.
+- `bonificadosAlPie`: si los renglones BONIF* suman exactamente el descuento al
+  pie y el documento lo resta, ese pie ya no se reparte (`factorDescuentoDeFactura`
+  recibe el cuerpo; también en `leer-dte-json`).
+- `repartirBonificados`: el bonificado entra al costo de su mismo producto, como
+  lo carga Bodega a mano (28-ago: 12 + 2 coco = 14 a $3.4057). Sin un pagado del
+  mismo producto, sigue en `repartirRegalos`. La forma de Steiner (renglón a $0,
+  reparto entre todos) no cambia: es la medida en sus compras.
+
 ## v2.1606.4 — Cierre de período y personal de sucursal más rápidos
 
 - **Cierre de período**: `calc_credito_declarable` pasa de ~600 ms a ~14 ms por mes

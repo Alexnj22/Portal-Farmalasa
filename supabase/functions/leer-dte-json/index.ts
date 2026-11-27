@@ -627,7 +627,7 @@ Deno.serve(async (req: Request) => {
           }
         }
         // El descuento al pie también baja el costo que se compara (RONASA 35 %).
-        const dsc = factorDescuentoDeFactura(dte?.resumen);
+        const dsc = factorDescuentoDeFactura(dte?.resumen, dte?.cuerpoDocumento);
         for (const r of renglones) {
           (r as any).vinetas = r.producto_id ? (vinetas.get(r.producto_id) ?? []) : [];
           const cant = Number(r.cantidad);

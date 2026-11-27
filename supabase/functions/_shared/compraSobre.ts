@@ -206,11 +206,13 @@ export function lineaDelSobre(
  * descuentos por renglón —que ya vienen restados en `ventaGravada`— lo
  * restaría dos veces.
  */
-export function factorDescuentoDeFactura(resumen: any): { gravada: number; exenta: number } {
+export function factorDescuentoDeFactura(resumen: any, cuerpo: any[] = []): { gravada: number; exenta: number } {
   const n = (v: unknown) => Number(v) || 0;
   const dG = n(resumen?.descuGravada), dE = n(resumen?.descuExenta), dN = n(resumen?.descuNoSuj);
   const sin = { gravada: 1, exenta: 1 };
   if (!(dG > 0 || dE > 0)) return sin;
+  // El «descuento» al pie es el valor de los bonificados: no es de los demás.
+  if (bonificadosAlPie(cuerpo, resumen).size) return sin;
   const ventas = n(resumen?.subTotalVentas) || n(resumen?.totalGravada) + n(resumen?.totalExenta) + n(resumen?.totalNoSuj);
   if (Math.abs(ventas - dG - dE - dN - n(resumen?.subTotal)) > 0.02) return sin;
   const g = n(resumen?.totalGravada), e = n(resumen?.totalExenta);
@@ -218,6 +220,76 @@ export function factorDescuentoDeFactura(resumen: any): { gravada: number; exent
     gravada: g > 0 && dG > 0 ? (g - dG) / g : 1,
     exenta: e > 0 && dE > 0 ? (e - dE) / e : 1,
   };
+}
+
+/**
+ * Bonificados cobrados en el renglón y restados al pie (Imberton, CCF 17725 del
+ * 26-nov-2026): «BONIF* PACK PEDIALYTE COCO» viene a $3.97 × 2 = $7.95 como
+ * cualquier renglón, y el pie trae «Bonificación $15.89» = la suma de los tres
+ * BONIF*. Tomado como descuento de la factura, bajaba 2.44 % a Epacor, Similac
+ * y todo lo demás, y los bonificados entraban como pagados.
+ *
+ * Sólo se reconoce si los renglones BONIF* suman EXACTAMENTE el descuento al
+ * pie y el documento lo resta (`subTotal`). Si no cuadra, no es esta forma y
+ * todo sigue como antes. Devuelve los índices de esos renglones en `cuerpo`.
+ */
+export function bonificadosAlPie(cuerpo: any[], resumen: any): Set<number> {
+  const n = (v: unknown) => Number(v) || 0;
+  const vacio = new Set<number>();
+  const dG = n(resumen?.descuGravada), dE = n(resumen?.descuExenta), dN = n(resumen?.descuNoSuj);
+  if (!(dG > 0) || dE > 0 || !Array.isArray(cuerpo)) return vacio;
+  const ventas = n(resumen?.subTotalVentas) || n(resumen?.totalGravada) + n(resumen?.totalExenta) + n(resumen?.totalNoSuj);
+  if (Math.abs(ventas - dG - dN - n(resumen?.subTotal)) > 0.02) return vacio;
+  const idx = new Set<number>();
+  let suma = 0;
+  cuerpo.forEach((c, i) => {
+    if (/^\s*BONIF/i.test(String(c?.descripcion ?? "")) && n(c?.ventaGravada) > 0) { idx.add(i); suma += n(c.ventaGravada); }
+  });
+  return idx.size && Math.abs(suma - dG) <= 0.02 ? idx : vacio;
+}
+
+/**
+ * El bonificado vale lo que costó su MISMO producto, no el promedio de la
+ * factura: así lo carga Bodega a mano con Imberton (compra del 28-ago: 12
+ * Pedialyte coco pagados + 2 de regalo = 14 a $3.4057 = $47.68 ÷ 14). Los
+ * demás productos no se tocan.
+ *
+ * `bonif[i]` marca las líneas que vienen de un renglón bonificado (ya en $0).
+ * Un bonificado sin un pagado del mismo producto queda en $0 y lo toma
+ * `repartirRegalos`. Actualiza `cobrado` con el valor nuevo de cada línea.
+ * Devuelve cuántas líneas bonificadas repartió.
+ */
+export function repartirBonificados(lineas: LineaSobre[], cobrado: number[], bonif: boolean[]): number {
+  const exist = (l: LineaSobre) => Number(l.cant) * Number(l.unidad);
+  const grupos = new Map<string, number[]>();
+  lineas.forEach((l, i) => {
+    if (l.bandera !== "PRODUCTO" || l.exento) return;
+    grupos.set(l.id_producto, [...(grupos.get(l.id_producto) ?? []), i]);
+  });
+  let hechos = 0;
+  for (const idx of grupos.values()) {
+    const regalos = idx.filter((i) => bonif[i] && Number(lineas[i].cant) > 0);
+    const pagados = idx.filter((i) => !bonif[i] && Number(lineas[i].compra) > 0);
+    if (!regalos.length || !pagados.length) continue;
+    const valor = pagados.reduce((a, i) => a + (Number(cobrado[i]) > 0 ? Number(cobrado[i]) : Number(lineas[i].compra) * Number(lineas[i].cant)), 0);
+    const todas = [...pagados, ...regalos].sort((a, b) => a - b);
+    const porUnidad = valor / todas.reduce((a, i) => a + exist(lineas[i]), 0);
+    // Mismo redondeo que `repartirRegalos`: 4 decimales, sin correr el total.
+    let exacto = 0, armado = 0;
+    for (const i of todas) {
+      const l = lineas[i], cant = Number(l.cant);
+      const v = porUnidad * exist(l);
+      exacto += v;
+      const u = (v / cant) * 1e4;
+      const abajo = Math.floor(u) / 1e4, arriba = Math.ceil(u) / 1e4;
+      const c = Math.abs(armado + abajo * cant - exacto) <= Math.abs(armado + arriba * cant - exacto) ? abajo : arriba;
+      armado += c * cant;
+      l.compra = c.toFixed(4); l.compra_fin = l.compra;
+      cobrado[i] = Math.round(v * 100) / 100;
+    }
+    hechos += regalos.length;
+  }
+  return hechos;
 }
 
 /** Lo que el formulario calcularía con esas líneas (copia de `totales()`). */

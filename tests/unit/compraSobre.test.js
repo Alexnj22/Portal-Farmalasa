@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { lineaDelSobre, totalesDelSobre, encabezadoDelDocumento, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento, factorDescuentoDeFactura } from '../../supabase/functions/_shared/compraSobre.ts';
+import { lineaDelSobre, totalesDelSobre, encabezadoDelDocumento, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento, factorDescuentoDeFactura, bonificadosAlPie, repartirBonificados } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -232,6 +232,46 @@ describe('descuento al pie de la factura', () => {
     });
     it('si el documento no lo resta, no se resta dos veces', () => {
         expect(factorDescuentoDeFactura({ ...RESUMEN, subTotal: 281.5 })).toEqual({ gravada: 1, exenta: 1 });
+    });
+});
+
+describe('bonificados cobrados en el renglón y restados al pie', () => {
+    /* Imberton, CCF 17725 (26-nov-2026): tres renglones «BONIF*» a $3.97 y
+     * «Bonificación $15.89» al pie. Bodega los carga en el costo de su mismo
+     * producto: 12 coco pagados + 2 de regalo = 14 a $3.4057. */
+    const RESUMEN = { totalGravada: 650.87, subTotalVentas: 650.87, descuGravada: 15.89, descuExenta: 0, descuNoSuj: 0, subTotal: 634.98 };
+    const cuerpo = [
+        { descripcion: 'PACK PEDIALYTE COCO 60 500ML', ventaGravada: 47.68 },
+        { descripcion: 'EPACOR 840 MGS 30 CBG CAJA', ventaGravada: 28.37 },
+        { descripcion: 'BONIF* PACK PEDIALYTE COCO 60 500ML', ventaGravada: 7.95 },
+        { descripcion: 'BONIF* PEDIALYTE FRESA 60', ventaGravada: 3.97 },
+        { descripcion: 'BONIF* PACK PEDIALYTE UVA 60MEQ', ventaGravada: 3.97 },
+    ];
+    it('los reconoce sólo si suman lo que resta el pie', () => {
+        expect([...bonificadosAlPie(cuerpo, RESUMEN)]).toEqual([2, 3, 4]);
+        expect(bonificadosAlPie(cuerpo, { ...RESUMEN, descuGravada: 20, subTotal: 630.87 }).size).toBe(0);
+        expect(bonificadosAlPie(cuerpo, { ...RESUMEN, subTotal: 650.87 }).size).toBe(0);   // el documento no lo resta
+        expect(bonificadosAlPie(cuerpo.slice(0, 2), RESUMEN).size).toBe(0);
+    });
+    it('el pie no se reparte como descuento de los demás', () => {
+        expect(factorDescuentoDeFactura(RESUMEN, cuerpo)).toEqual({ gravada: 1, exenta: 1 });
+        expect(factorDescuentoDeFactura(RESUMEN).gravada).toBeCloseTo(634.98 / 650.87, 6);   // sin renglones, como antes
+    });
+    it('cada bonificado entra al costo de su producto y los demás no se mueven', () => {
+        const l = (id, cant, compra) => ({
+            id_producto: id, compra: compra.toFixed(4), compra_fin: compra.toFixed(4), venta: '5.6100', cant: String(cant),
+            unidad: '1', vence: '', id_presentacion: '1', exento: 0, bandera: 'PRODUCTO', descripcion_ser: '-', numero_lote: '',
+        });
+        const lineas = [l('3925', 12, 3.9733), l('4458', 1, 28.37), l('97', 6, 3.9733), l('3925', 2, 0), l('97', 1, 0), l('99', 1, 0)];
+        const cobrado = [47.68, 28.37, 23.84, 0, 0, 0];
+        const bonif = [false, false, false, true, true, true];
+        expect(repartirBonificados(lineas, cobrado, bonif)).toBe(2);   // uva no trae pagado aquí
+        // 47.68 ÷ 14 = 3.40571…: alterna 3.4057/3.4058 para no correr el total, como Bodega.
+        for (const i of [0, 2, 3, 4]) expect(['3.4057', '3.4058']).toContain(lineas[i].compra);
+        expect(lineas[1].compra).toBe('28.3700');
+        expect(lineas[5].compra).toBe('0.0000');   // sin pagado del mismo producto: lo toma `repartirRegalos`
+        const coco = 12 * Number(lineas[0].compra) + 2 * Number(lineas[3].compra);
+        expect(Math.abs(coco - 47.68)).toBeLessThanOrEqual(0.005);
     });
 });
 

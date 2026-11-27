@@ -33,7 +33,7 @@ import {
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, partirEnLotes, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura, repartirNotaDeDescuento, resumenMenosNota, codigoDeRegalia,
+  lineaDelSobre, partirEnLotes, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, repartirBonificados, bonificadosAlPie, factorDescuentoDeFactura, repartirNotaDeDescuento, resumenMenosNota, codigoDeRegalia,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 import { aplicarParticiones } from "../_shared/particionRenglon.ts";
@@ -2814,6 +2814,7 @@ Deno.serve(async (req: Request) => {
     const lineas: LineaSobre[] = [];
     const detalle: unknown[] = [];
     const cobrado: number[] = [];
+    const bonifLinea: boolean[] = [];   // la línea viene de un renglón «BONIF*» (ver `bonificadosAlPie`)
     const deLinea: { renglon: number; descripcion: string }[] = [];   // qué renglón es cada línea
     const erroneos: Erroneo[] = [];
     const reparto: LineaReparto[] = [];
@@ -2834,7 +2835,10 @@ Deno.serve(async (req: Request) => {
       }
     }
     // El descuento al pie de la factura se reparte en el costo de cada renglón.
-    const dsc = factorDescuentoDeFactura(dte?.resumen);
+    // Si ese «descuento» es el valor de los renglones BONIF* (Imberton), no se
+    // reparte: esos renglones entran de regalo, en el costo de su producto.
+    const dsc = factorDescuentoDeFactura(dte?.resumen, crudos);
+    const bonifDoc = bonificadosAlPie(crudos, dte?.resumen);
     // Regalías en nota de crédito (ver `notasDeDescuento`): la compra entra por
     // el CCF MENOS la nota, como la carga Bodega a mano, y cada producto lleva
     // sus regalías (`compra_regalia`). `sin_nota_descuento` la deja fuera si la
@@ -2911,12 +2915,13 @@ Deno.serve(async (req: Request) => {
     }
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
+      const esBonif = uso !== "consumo" && bonifDoc.has(Number(it?._origen ?? i));
       const r: RenglonDoc = {
         descripcion: String(it?.descripcion ?? ""),
         cantidad: Number(it?.cantidad), precio: Number(it?.precioUni),
         descuento: Number(it?.montoDescu ?? 0),
         exento: Number(it?.ventaExenta ?? 0) > 0,
-        subtotal: Number(it?.ventaGravada ?? 0) * dsc.gravada - rebajaNota[i] + Number(it?.ventaExenta ?? 0) * dsc.exenta + Number(it?.ventaNoSuj ?? 0),
+        subtotal: esBonif ? 0 : Number(it?.ventaGravada ?? 0) * dsc.gravada - rebajaNota[i] + Number(it?.ventaExenta ?? 0) * dsc.exenta + Number(it?.ventaNoSuj ?? 0),
       };
       let dec: Decision;
       if (uso === "consumo") dec = { tipo: "consumo" };
@@ -2953,6 +2958,9 @@ Deno.serve(async (req: Request) => {
       }
       const res = lineaDelSobre(i, r, dec);
       problemas.push(...res.problemas);
+      // El bonificado lo cobra el renglón y lo devuelve el pie: entra en $0 y
+      // `repartirBonificados` le da el costo de su producto.
+      if (esBonif && res.linea && res.linea.bandera === "PRODUCTO") { res.linea.compra = "0.0000"; res.linea.compra_fin = "0.0000"; }
       // Varios lotes en un renglón (2026-11-24): una línea por lote, mismo
       // producto y costo; las unidades suman lo que entra (`partirEnLotes`).
       const pideLotes = (decisiones[String(i)] as any)?.lotes;
@@ -3073,7 +3081,7 @@ Deno.serve(async (req: Request) => {
           }
         }
       }
-      if (delRenglon.length === 1) { lineas.push(delRenglon[0]); cobrado.push(Number(r.subtotal) || 0); deLinea.push({ renglon: i, descripcion: r.descripcion }); }
+      if (delRenglon.length === 1) { lineas.push(delRenglon[0]); cobrado.push(Number(r.subtotal) || 0); bonifLinea.push(esBonif); deLinea.push({ renglon: i, descripcion: r.descripcion }); }
       else if (delRenglon.length > 1) {
         // Lo cobrado se reparte por unidades; el último lote se queda con el redondeo.
         const total = Number(r.subtotal) || 0, todas = delRenglon.reduce((a, l) => a + Number(l.cant), 0);
@@ -3081,7 +3089,8 @@ Deno.serve(async (req: Request) => {
         delRenglon.forEach((l, j) => {
           const parte = j === delRenglon.length - 1 ? queda : Math.round(total * Number(l.cant) / todas * 100) / 100;
           queda -= parte;
-          lineas.push(l); cobrado.push(parte); deLinea.push({ renglon: i, descripcion: `${r.descripcion} (lote ${j + 1})` });
+          if (esBonif) { l.compra = "0.0000"; l.compra_fin = "0.0000"; }
+          lineas.push(l); cobrado.push(parte); bonifLinea.push(esBonif); deLinea.push({ renglon: i, descripcion: `${r.descripcion} (lote ${j + 1})` });
         });
         partidos.push([delRenglon[0], res.linea!]);
       }
@@ -3105,7 +3114,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const regalos = repartirRegalos(lineas, cobrado);
+    const regalos = repartirBonificados(lineas, cobrado, bonifLinea) + repartirRegalos(lineas, cobrado);
     // La línea del renglón entero (la que lee la revisión) lleva el costo de sus lotes.
     for (const [lote1, entera] of partidos) { entera.compra = lote1.compra; entera.compra_fin = lote1.compra_fin; }
     // El costo que viaja a la sala y el del erróneo, ya con los regalos

@@ -328,13 +328,15 @@ export const createConteoInventarioSlice = (set, get) => ({
 
     // Cuántos renglones siguen sin cantidad física. Se pide antes de finalizar:
     // el usuario tiene que decidir qué son esos pendientes, no descubrirlos
-    // después en el reporte (C4).
-    fetchConteoPendientesCount: async (conteoId) => {
-        const { data, error } = await supabase.rpc('get_conteo_items_count', {
-            p_conteo_id: conteoId, p_search: null, p_filtro: 'PENDIENTES',
-        });
+    // después en el reporte (C4). Separados (2026-11-28): los lotes vacíos de
+    // un producto que sí se contó no son pendientes, al finalizar quedan en 0.
+    fetchConteoPendientesAlFinalizar: async (conteoId) => {
+        const { data, error } = await supabase.rpc('get_conteo_pendientes_al_finalizar', { p_conteo_id: conteoId });
         if (error) throw error;
-        return data || 0;
+        return {
+            sinContar: Number(data?.sin_contar) || 0,
+            vaciosDeContados: Number(data?.vacios_de_contados) || 0,
+        };
     },
 
     // Corrige la etiqueta de lote/vencimiento de una línea ya creada (ej. el

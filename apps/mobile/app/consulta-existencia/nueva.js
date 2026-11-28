@@ -25,13 +25,14 @@ import { Aviso, BotonGrande, Campo, PantallaSinDato, Seccion } from '../../compo
 import { fallo, listo } from '../../componentes/Progreso';
 
 export default function PedirConteo() {
-  const { producto: pId, nombre: pNombre, sala: pSala } = useLocalSearchParams();
+  const { producto: pId, nombre: pNombre, sala: pSala, motivo: pMotivo } = useLocalSearchParams();
   const { hasPermission } = useAuth();
   const fijo = pId ? { id: Number(pId), nombre: String(pNombre ?? '') } : null;
   const [producto, setProducto] = useState(fijo);
   const [salas, setSalas] = useState(null);
   const [elegidas, setElegidas] = useState(() => new Set(pSala ? [Number(pSala)] : []));
-  const [motivo, setMotivo] = useState('');
+  // Desde un conteo llega con el motivo escrito (2026-11-28).
+  const [motivo, setMotivo] = useState(pMotivo ? String(pMotivo) : '');
   const [enviando, setEnviando] = useState(false);
   const [texto, setTexto] = useState('');
   const termino = useTextoRebotado(texto, 150).trim();

@@ -96,7 +96,7 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos 
           fisico_primer_conteo: r.fisico_primer_conteo, fisico_cantidad: valor, sistema_cantidad: r.sistema_cantidad,
           diferencia: r.diferencia, estado_item: valor === 0 && r.sistema_cantidad > 0 ? 'SIN_UBICAR' : 'CONTADO',
           recontado_at: new Date().toISOString(),
-        });
+        }, { enCero: (r.en_cero ?? []).length > 0 });
       }
       onCerrar();
     } catch (e) {
@@ -188,6 +188,9 @@ export default function AccionDeRenglon({ item, modo, aCiegas = false, hermanos 
                 <Seccion titulo="Nota (opcional)">
                   <Campo value={nota} onChangeText={setNota} placeholder="Dónde apareció, qué se revisó" style={{ minHeight: 60 }} />
                 </Seccion>
+                {hermanos.length > 1 && !hermanos.some((h) => h.recontado_at)
+                  ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Al guardar, los otros lotes de este producto quedan en 0 hasta que los recuentes. Vacío = 0.</Text>
+                  : null}
               </>
             )}
             <BotonGrande texto={guardando ? 'Guardando…' : esLote ? 'Corregir el lote' : 'Guardar el recuento'} onPress={guardar} deshabilitado={!valido || guardando} />

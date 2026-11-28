@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1606.17 — Conteo: vacío = 0, filtro Recontados y pedir conteo a sucursales
+
+Bodega, reconteo: «tiene 5 renglones un producto … hago reconteo y sólo le
+pongo a 2, los otros 3 no los pongo porque no hay … ¿habrá 5 en vez de 2? …
+debería tomarlo como 0 si lo dejo vacío», y «que sirva no sólo para reconteo
+sino para todo el conteo».
+
+- **Recuento**: el primer lote que se recuenta de un producto deja en 0 sus
+  otros lotes ya contados, con la existencia de ese momento. Lo que se
+  recuente después los pisa. Antes, lo no recontado se quedaba con el primer
+  conteo y el ajuste mezclaba los dos.
+- **Conteo normal**: al finalizar, en un producto con algún lote contado, los
+  lotes vacíos quedan en 0 (entran al resultado y al ajuste). Lo que no se tocó
+  sigue siendo «pendiente». Un producto «a medio contar» ya no frena el
+  finalizar de un conteo que ajusta.
+- En pantalla: el lote vacío de un producto con algún lote contado muestra 0
+  y «Vacío = 0»; lo dicen también el aviso del conteo, el del recuento, el
+  diálogo de finalizar (cuántos lotes vacíos quedan en 0) y la hoja de recontar
+  de la app.
+- Filtro **Recontados** (conteo finalizado o cerrado): productos con algún
+  lote recontado, con todos sus lotes.
+- **Pedir conteo a sucursales** en cada producto del conteo terminado: abre la
+  consulta de existencia con el producto y el motivo ya escritos.
+- Base: `20261128134435_conteo_recuento_vacio_es_cero_y_filtro_recontados`
+  (`recontar_conteo_item` devuelve `en_cero`; `conteo_sistema_del_item`;
+  filtro en `get_conteo_products_page/_count` e `items_search`) y
+  `20261128134608_conteo_lote_vacio_de_producto_contado_es_cero_al_finalizar`
+  (`finalizar_conteo_inventario`, `conteo_caja_problemas_de`,
+  `get_conteo_pendientes_al_finalizar`). Probadas en transacción deshecha:
+  recuento en Bodega (producto de 6 lotes) y finalizar en un conteo abierto.
+- Gemelo: conteo_inventario — el portal y la app cambian juntos en este commit.
+- Gemelo: inventario — en src/components/inventario/NuevaConsultaExistencia.jsx
+
 ## v2.1606.16 — «Con diferencia» lista sólo los productos que no cuadran
 
 Bodega, reconteo: «¿por qué al darle en con diferencia me salen 1186

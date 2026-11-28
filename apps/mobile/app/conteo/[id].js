@@ -74,7 +74,7 @@ const TONO = { ok: () => MARCA.verde, sobra: () => MARCA.ambar, falta: () => MAR
 const renglonesPorGuardar = new Set();
 const guardarRenglonesPendientes = () => { renglonesPorGuardar.forEach((fn) => fn()); };
 
-function Renglon({ it, producto, editable, aCiegas = false, ajusta = true, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar, onEnCurso }) {
+function Renglon({ it, producto, editable, aCiegas = false, ajusta = true, vacioEsCero = false, onGuardado, onHistorial, onLote, onLoteReal, onRecontar, registrar, onSiguiente, onEnfocar, onEnCurso }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
   const [abierto, setAbierto] = useState(it.estado_item === 'PENDIENTE');
@@ -182,12 +182,13 @@ function Renglon({ it, producto, editable, aCiegas = false, ajusta = true, onGua
         </View>
         {puedeEscribir ? (
           <View style={{ width: 96 }}>
-            <Campo ref={campo} multiline={false} value={String(valor)} keyboardType="number-pad" placeholder="Cant." selectTextOnFocus
+            <Campo ref={campo} multiline={false} value={String(valor)} keyboardType="number-pad" placeholder={vacioEsCero ? '0' : 'Cant.'} selectTextOnFocus
               autoFocus={recienAbierto}
               style={{ textAlign: 'center', fontSize: 22, fontWeight: '800', minHeight: 50 }}
               onFocus={() => onEnfocar?.(campo)}
               onChangeText={(v) => setValor(v.replace(/[^\d]/g, ''))} onEndEditing={alTerminar} onSubmitEditing={alTerminar}
               onSiguiente={() => onSiguiente?.(it.id)} editable={!guardando} />
+            {vacioEsCero && String(valor) === '' ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Vacío = 0</Text> : null}
           </View>
         ) : (
           <Pressable disabled={!editable} onPress={() => { Haptics.selectionAsync().catch(() => {}); setRecienAbierto(true); setAbierto(true); }}
@@ -250,7 +251,7 @@ export default function Conteo() {
   const fetchConteoItemsForProducts = useStaffStore((s) => s.fetchConteoItemsForProducts);
   const finalizarConteoInventario = useStaffStore((s) => s.finalizarConteoInventario);
   const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
-  const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
+  const fetchConteoPendientesAlFinalizar = useStaffStore((s) => s.fetchConteoPendientesAlFinalizar);
   const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
   const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
   const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
@@ -415,9 +416,13 @@ export default function Conteo() {
   const recontarPropio = hasPermission('conteo_inventario_recontar');
   const puedeRecontar = conteo?.status === 'FINALIZADO'
     && (hasPermission('conteo_inventario', 'can_approve') || recontarPropio);
+  // Pedir a otras sucursales que cuenten un producto, con el conteo terminado
+  // (2026-11-28, Bodega). Gemelo del botón del portal.
+  const puedePedirConteo = puedeEditar && ['FINALIZADO', 'CERRADO'].includes(conteo?.status);
   const simple = conteo?.modo === 'SIMPLE';
   const verSistema = resumen?.ver_sistema ?? productos.filas.some((p) => p.ver_sistema);
-  const filtros = FILTROS_CONTEO.filter((f) => !f.soloConSistema || verSistema);
+  const filtros = FILTROS_CONTEO.filter((f) => (!f.soloConSistema || verSistema)
+    && (!f.soloEnRevision || ['FINALIZADO', 'CERRADO'].includes(conteo?.status)));
   const sala = (sucursales || []).find((b) => String(b.id) === String(conteo?.branch_id))?.name;
 
   // Lo que entra a la sala DESPUÉS de empezar el conteo se suma solo, como en el
@@ -629,9 +634,12 @@ export default function Conteo() {
   }, [productos, items, cargando, clave, busqueda, enfocarDesde]);
 
   // Lo que devolvió el servidor al corregir el lote o recontar, sin recargar la página.
-  const alAccion = (itemId, cambio) => {
+  // Si el recuento dejó en 0 otros lotes del producto (vacío = 0), se relee el producto.
+  const alAccion = (itemId, cambio, { enCero = false } = {}) => {
     setItems((m) => Object.fromEntries(Object.entries(m).map(([erp, filas]) => [erp, filas.map((it) => (it.id === itemId ? { ...it, ...cambio } : it))])));
-    cargarConteo();
+    const erp = Object.entries(items).find(([, filas]) => filas.some((it) => it.id === itemId))?.[0];
+    if (enCero && erp) refrescarProducto(Number(erp));
+    else cargarConteo();
   };
 
   const fetchConteoCajaPlan = useStaffStore((s) => s.fetchConteoCajaPlan);
@@ -696,13 +704,20 @@ export default function Conteo() {
       } catch (e) { fallo('No se pudo revisar el conteo', mensajeAmigable(e)); return; }
     }
     // Cuánto falta, preguntado a la base en este momento y con la MISMA
-    // función que la web (`fetchConteoPendientesCount`). Si no se puede saber,
+    // función que la web (`fetchConteoPendientesAlFinalizar`). Si no se puede saber,
     // no se pregunta ni se finaliza: adivinarlo con la pantalla podía cerrar
     // un conteo a medias sin que nadie lo decidiera.
     let pendientes;
+    let vacios;
     try {
-      pendientes = Math.max(0, Number(await fetchConteoPendientesCount(id)) || 0);
+      const c = await fetchConteoPendientesAlFinalizar(id);
+      pendientes = c.sinContar;
+      vacios = c.vaciosDeContados;
     } catch (e) { fallo('No se pudo revisar el conteo', mensajeAmigable(e)); return; }
+    // Los lotes vacíos de un producto contado no son pendientes: quedan en 0.
+    const avisoVacios = vacios
+      ? `\n\n${vacios.toLocaleString('es-SV')} ${vacios === 1 ? 'lote vacío' : 'lotes vacíos'} de productos que sí contaste ${vacios === 1 ? 'queda' : 'quedan'} en 0. Vacío = 0.`
+      : '';
     // Las cifras de arriba, de paso: el último guardado no estaba en el resumen.
     Promise.resolve(fetchConteoResumen(id)).then((r) => { if (r) setResumen(r); }).catch(() => {});
     const enviar = async (comoCero) => {
@@ -715,13 +730,13 @@ export default function Conteo() {
       } catch (e) { fallo('No se pudo finalizar', mensajeAmigable(e)); }
     };
     if (!pendientes) {
-      Alert.alert('¿Finalizar el conteo?', 'Después ya no se puede contar. Otra persona tiene que aprobarlo.', [
+      Alert.alert('¿Finalizar el conteo?', `Después ya no se puede contar. Otra persona tiene que aprobarlo.${avisoVacios}`, [
         { text: 'Seguir contando', style: 'cancel' }, { text: 'Finalizar', onPress: () => enviar(false) }]);
       return;
     }
     // Las mismas dos opciones que la web, explicadas: es una decisión contable.
     Alert.alert(`Quedan ${pendientes.toLocaleString('es-SV')} sin contar`,
-      'Después ya no se puede contar.\n\nFuera del cálculo: no cuentan como diferencia. El reporte dice que el conteo fue parcial.\n\nNo ubicados: quedan en 0 y cuentan como faltante.', [
+      `Después ya no se puede contar.\n\nFuera del cálculo: no cuentan como diferencia. El reporte dice que el conteo fue parcial.\n\nNo ubicados: quedan en 0 y cuentan como faltante.${avisoVacios}`, [
         { text: 'Seguir contando', style: 'cancel' },
         { text: 'Dejarlos fuera del cálculo', onPress: () => enviar(false) },
         { text: 'Darlos por no ubicados (en 0)', style: 'destructive', onPress: () => enviar(true) },
@@ -799,7 +814,7 @@ export default function Conteo() {
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>Modo recuento</Text>
                 <Interruptor value={recuento} onValueChange={(v) => { setRecuento(v); if (v) { setFiltro('DIFERENCIA'); setOrden(''); } }} />
               </View>
-              {recuento ? <Aviso tono="nota" texto={`Vuelve a contar los productos con diferencia, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo.${recontarPropio ? ' Puedes recontar también lo que contaste tú.' : ' No puedes recontar lo que contaste tú.'}`} /> : null}
+              {recuento ? <Aviso tono="nota" texto={`Vuelve a contar los productos con diferencia, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo. Al recontar un producto, el lote que dejes vacío queda en 0.${recontarPropio ? ' Puedes recontar también lo que contaste tú.' : ' No puedes recontar lo que contaste tú.'}`} /> : null}
             </View>
           ) : null}
           {/* El conteo firma la diferencia; el stock se corrige afuera. Hasta que
@@ -901,6 +916,12 @@ export default function Conteo() {
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{p.product_nombre}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{p.laboratorio_nombre}</Text>
                       {pide && !simple ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '700' }}>{pide}</Text> : null}
+                      {puedePedirConteo ? (
+                        <Pressable hitSlop={8} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}
+                          onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/consulta-existencia/nueva', params: { producto: String(p.erp_product_id), nombre: p.product_nombre ?? '', motivo: `Diferencia en el conteo de ${sala ?? 'la sucursal'}` } }); }}>
+                          <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Pedir conteo a sucursales</Text>
+                        </Pressable>
+                      ) : null}
                     </View>
                     <Pildora texto={estado.texto} color={TONO[estado.tono]()} />
                   </View>
@@ -921,6 +942,8 @@ export default function Conteo() {
                         // ve el lote mal anotado; las cantidades entran como recuento.
                         onLoteReal={(editable || recuento) && !simple && (!conteo?.aplica_en_caja || !it.es_agregado_manual) ? setLoteReal : null}
                         ajusta={!!conteo?.aplica_en_caja}
+                        // Vacío = 0 (2026-11-28): otro lote del producto ya tiene número.
+                        vacioEsCero={items[p.erp_product_id].length > 1 && items[p.erp_product_id].some((h) => (recuento ? h.recontado_at : h.fisico_cantidad != null))}
                         onRecontar={puedeRecontar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                   </View>
                 </Vidrio>

@@ -16,6 +16,8 @@ export const FILTROS_CONTEO = [
     { key: 'PENDIENTES', label: 'Pendientes' },
     { key: 'DIFERENCIA', label: 'Con diferencia', soloConSistema: true },
     { key: 'SIN_UBICAR', label: 'No ubicados', soloConSistema: true },
+    // Productos con algún lote recontado. Sólo existe con el conteo finalizado.
+    { key: 'RECONTADOS', label: 'Recontados', soloEnRevision: true },
 ];
 
 /** Un conteo se puede contar mientras está en borrador o en progreso. */

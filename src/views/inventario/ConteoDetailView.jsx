@@ -8,7 +8,7 @@ import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff, FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle, ChevronUp,
+    ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff, FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle, ChevronUp, ScanSearch,
 } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -81,6 +81,24 @@ const vaPorLoteReal = (ajusta, item) => ajusta && !item?.es_agregado_manual;
 const llevaLotesEnLinea = (ajusta, item, editable, simple, onLoteEnLinea) =>
     !!onLoteEnLinea && editable && !simple;
 const LoteRealDelRenglon = lazy(() => import('./LoteRealDelRenglon'));
+// Pedirle a otras sucursales que cuenten un producto (2026-11-28, Bodega): si
+// falta acá, ver si está allá. Es la consulta de existencia de siempre.
+const NuevaConsultaExistencia = lazy(() => import('../../components/inventario/NuevaConsultaExistencia'));
+// Quién puede pedirlo y a dónde: la pantalla lo decide; los renglones sólo
+// muestran el botón si hay a quién llamar.
+const PedirConteoASucursales = createContext(null);
+
+function BotonPedirConteo({ product }) {
+    const pedir = useContext(PedirConteoASucursales);
+    if (!pedir || !product) return null;
+    return (
+        <Button variant="ghost" size="xs" icon={ScanSearch} className="self-start"
+            title="Pedir a otras sucursales que cuenten este producto"
+            onClick={() => pedir({ id: product.erp_product_id, nombre: product.product_nombre })}>
+            Pedir conteo a sucursales
+        </Button>
+    );
+}
 import { formatMoney, formatQty, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -354,7 +372,7 @@ function AvisoDeAjuste() {
                     <li><strong>+ Lote</strong> agrega otra fila.</li>
                     <li>Si ya tiene lote, confírmalo o corrígelo con el lápiz.</li>
                     <li>Cuenta en lo que dice debajo del lote: cajas, blísteres o unidades.</li>
-                    <li>Si falta un lote, ese producto no se ajusta.</li>
+                    <li>Si un lote no está, déjalo vacío. Vacío = 0.</li>
                 </ul>
             )}
         </Notice>
@@ -447,6 +465,9 @@ function ItemRow({
     // El producto cuadra en total con todos sus renglones contados (ver
     // `productoCuadra`). Lo decide la lista, que tiene el total del servidor.
     cuadraElProducto = false,
+    // Otro lote del producto ya tiene número (en el recuento: ya se recontó).
+    // Entonces este, vacío, cuenta como 0, y se dice.
+    vacioEsCero = false,
 }) {
     const { showToast } = useToastStore();
     const ajusta = useContext(AjustaElInventario);
@@ -638,6 +659,7 @@ function ItemRow({
                         </div>
                         <span className="text-micro text-content-3 truncate">{producto.laboratorio_nombre || 'Sin laboratorio'}</span>
                         {rotuloDeLoQuePide(producto) && <span className="text-micro font-semibold text-primary truncate">{rotuloDeLoQuePide(producto)}</span>}
+                        <BotonPedirConteo product={producto} />
                     </div>
                 ) : (
                     <span className="text-content-3 text-label">↳</span>
@@ -750,7 +772,7 @@ function ItemRow({
                                     onWheel={(e) => e.currentTarget.blur()}
                                     value={fisico}
                                     onChange={(e) => setFisico(e.target.value)}
-                                    placeholder={recuento && !revelado ? 'Recontar' : unidad.nombre}
+                                    placeholder={recuento && !revelado ? (vacioEsCero ? '0' : 'Recontar') : (vacioEsCero && fisico === '' ? '0' : unidad.nombre)}
                                     onKeyDown={alTeclearEnCaptura}
                                     enterKeyHint="next"
                                     onBlur={commit}
@@ -775,6 +797,9 @@ function ItemRow({
                     {/* Solo después de registrar el recuento: ver si coincidió con
                         el primer conteo es la métrica de calidad de ese conteo. */}
                     {saving && <span className="text-micro text-content-3">Guardando…</span>}
+                    {!saving && vacioEsCero && fisico === '' && puedeEscribir && (
+                        <span className="text-micro text-content-3">Vacío = 0</span>
+                    )}
                     {!saving && noSeGuardo && (
                         <span role="alert" className="text-micro font-bold text-danger-text">No se guardó. Escríbelo otra vez.</span>
                     )}
@@ -861,6 +886,7 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
                     <span className="text-micro text-content-3 truncate">{product.laboratorio_nombre || 'Sin laboratorio'}</span>
                     {/* Qué pide el producto (regulado → lote y vence; perecedero → vence). */}
                     {rotuloDeLoQuePide(product) && <span className="text-micro font-semibold text-primary truncate">{rotuloDeLoQuePide(product)}</span>}
+                    <BotonPedirConteo product={product} />
                 </div>
             </DataCell>
             <DataCell>
@@ -910,7 +936,7 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
 // pasillo: una tarjeta por PRODUCTO con sus lotes adentro (el producto repetido
 // por lote se leía como dos productos distintos), campo de 56px y todo objetivo
 // táctil en 44px o más.
-function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, onLoteEnLinea, currentUser, simple = false, enVivo = false, cuadraElProducto = false }) {
+function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, onLoteEnLinea, currentUser, simple = false, enVivo = false, cuadraElProducto = false, vacioEsCero = false }) {
     const ajusta = useContext(AjustaElInventario);
     const unidad = unidadDeConteo(item);
     const { showToast } = useToastStore();
@@ -1077,7 +1103,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                             // y hace lo que dice: salta al próximo renglón sin
                             // contar sin cerrar el teclado.
                             enterKeyHint="next"
-                            placeholder={recuento ? 'Recontar' : unidad.nombre}
+                            placeholder={recuento ? (vacioEsCero ? '0' : 'Recontar') : (vacioEsCero && fisico === '' ? '0' : unidad.nombre)}
                             readOnly={!editable && !recuento}
                             data-fisico-input="true"
                             alto
@@ -1095,6 +1121,9 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                 )}
             </div>
             {saving && <p className="text-caption text-content-3 mt-1">Guardando…</p>}
+            {!saving && vacioEsCero && fisico === '' && (editable || recuento) && (
+                <p className="text-caption text-content-3 mt-1 text-center">Vacío = 0</p>
+            )}
             {!saving && noSeGuardo && (
                 <p role="alert" className="text-caption font-bold text-danger-text mt-1">No se guardó. Escríbelo otra vez.</p>
             )}
@@ -1167,6 +1196,13 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
     );
 }
 
+// Vacío = 0 (2026-11-28): en un producto de varios lotes, en cuanto uno tiene
+// número, el que quede vacío cuenta como 0 —al finalizar lo pone la base—. En
+// el recuento manda lo recontado: el primer lote recontado deja los otros en 0.
+const vacioEsCeroEn = (lines, recuento) => !!lines && lines.length > 1 && (recuento
+    ? lines.some((l) => l.recontado_at)
+    : lines.some((l) => l.fisico_cantidad != null));
+
 // Una lista de conteo: fichas en el teléfono, tabla en escritorio. Sale a su
 // propio componente porque ahora hay DOS —la bodega y el área de vencidos— y
 // dibujarlas con dos copias del mismo bloque es cómo se desincronizan.
@@ -1231,6 +1267,7 @@ function ListaDeConteo({
                                     index={soloUno ? i : j}
                                     producto={soloUno ? product : null}
                                     cuadraElProducto={verSistema && productoCuadra(product)}
+                                    vacioEsCero={vacioEsCeroEn(lines, fila.recuento)}
                                     verSistema={verSistema}
                                     simple={simple}
                                     {...fila}
@@ -1260,6 +1297,7 @@ function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }
                 </span>
             </div>
             {product.es_antibiotico && <Badge variant="danger" size="sm" className="mt-1">Bajo Receta</Badge>}
+            <BotonPedirConteo product={product} />
             {/* El total del producto, con la misma condición que la banda de grupo
                 de la tabla: solo cuando hay más de un renglón. Con uno solo, la
                 línea de abajo ya dice exactamente estos mismos tres números. */}
@@ -1295,7 +1333,8 @@ function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }
             {lines
                 ? lines.map((it) => (
                     <LoteMovil key={it.id} item={it} desbloqueada={!!desbloqueadas[it.id]}
-                        cuadraElProducto={verSistema && productoCuadra(product)} {...rest} />
+                        cuadraElProducto={verSistema && productoCuadra(product)}
+                        vacioEsCero={vacioEsCeroEn(lines, rest.recuento)} {...rest} />
                 ))
                 : <div className="mt-2"><SkeletonText lines={2} /></div>}
         </div>
@@ -1609,7 +1648,7 @@ const TRATO_PENDIENTES = [
     { value: 'CERO', label: 'Darlos por no ubicados (físico 0)' },
 ];
 
-function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
+function FinalizarConteoModal({ open, pendientes: cuantos, busy, onClose, onConfirm }) {
     const [trato, setTrato] = useState('EXCLUIR');
 
     // El default se restablece al salir, no con un efecto sobre `open`:
@@ -1619,6 +1658,8 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
     const handleClose = salir(onClose);
     const handleConfirm = () => { const comoCero = trato === 'CERO'; setTrato('EXCLUIR'); onConfirm(comoCero); };
 
+    const pendientes = cuantos?.sinContar ?? 0;
+    const vacios = cuantos?.vaciosDeContados ?? 0;
     const hayPendientes = pendientes > 0;
 
     return (
@@ -1635,6 +1676,12 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                 <p className="text-label text-content-2">
                     Después de finalizar ya no se pueden cambiar cantidades. Otra persona tiene que aprobar el conteo.
                 </p>
+
+                {vacios > 0 && (
+                    <Notice variant="info">
+                        <strong className="tabular-nums">{vacios}</strong> {vacios === 1 ? 'lote vacío' : 'lotes vacíos'} de productos que sí contaste {vacios === 1 ? 'queda' : 'quedan'} en 0. Vacío = 0.
+                    </Notice>
+                )}
 
                 {hayPendientes ? (
                     <>
@@ -1656,7 +1703,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                         </p>
                     </>
                 ) : (
-                    <Notice variant="success">Todo tiene cantidad contada.</Notice>
+                    <Notice variant="success">{vacios > 0 ? 'Todos los productos tienen cantidad contada.' : 'Todo tiene cantidad contada.'}</Notice>
                 )}
             </div>
 
@@ -1691,6 +1738,9 @@ export default function ConteoDetailView() {
     // Recontar sin aprobar: revisar las diferencias y firmar el conteo son dos
     // cosas, y la segunda la hace otra persona.
     const canRecontarPropio = hasPermission('conteo_inventario_recontar');
+    // Pedir conteo a sucursales: con el conteo terminado y el mismo permiso que
+    // exige `consulta_existencia_crear`.
+    const [pedirConteoDe, setPedirConteoDe] = useState(null);
     const canRecontar = canApprove || canRecontarPropio;
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
@@ -1702,7 +1752,7 @@ export default function ConteoDetailView() {
     const finalizarConteoInventario = useStaffStore((s) => s.finalizarConteoInventario);
     const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
     const fetchTodosLosItemsConteo = useStaffStore((s) => s.fetchTodosLosItemsConteo);
-    const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
+    const fetchConteoPendientesAlFinalizar = useStaffStore((s) => s.fetchConteoPendientesAlFinalizar);
     const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
     const eliminarConteoInventario = useStaffStore((s) => s.eliminarConteoInventario);
     const recontarConteoItem = useStaffStore((s) => s.recontarConteoItem);
@@ -1799,7 +1849,7 @@ export default function ConteoDetailView() {
     const [editLoteOpen, setEditLoteOpen] = useState(false);
     const [itemsByProduct, setItemsByProduct] = useState({});
     const [confirmFinalizarOpen, setConfirmFinalizarOpen] = useState(false);
-    const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState(0);
+    const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState({ sinContar: 0, vaciosDeContados: 0 });
     const [promptAprobarOpen, setPromptAprobarOpen] = useState(false);
     // El conteo que ajusta el inventario: qué frena el finalizar y qué se
     // aplica al aprobar (2026-11-06).
@@ -2081,6 +2131,7 @@ export default function ConteoDetailView() {
     const loFinalizoYo = !!conteo?.finalizado_por && String(conteo.finalizado_por) === String(user?.id);
     const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove && !loFinalizoYo;
     const puedeRecontar = conteo?.status === 'FINALIZADO' && canRecontar;
+    const puedePedirConteo = canEdit && ['FINALIZADO', 'CERRADO'].includes(conteo?.status);
     const hasResults = conteo && ['FINALIZADO', 'CERRADO'].includes(conteo.status);
 
     // Borrar tiene dos niveles y la RPC los aplica igual: acá solo se decide si
@@ -2146,6 +2197,10 @@ export default function ConteoDetailView() {
         },
         recontar: async (itemId, payload, erpProductId) => {
             const result = await recontarConteoItem(itemId, payload);
+            const ahora = new Date().toISOString();
+            const quien = user ? shortEmployeeName(user) : null;
+            // Los otros lotes del producto que la base dejó en 0 (vacío = 0).
+            const enCero = new Map((result.en_cero ?? []).map((c) => [c.id, c]));
             setItems((prev) => {
                 const lines = conNetoDelGrupo((prev[erpProductId] || []).map((it) => (it.id === itemId ? {
                     ...it,
@@ -2153,8 +2208,17 @@ export default function ConteoDetailView() {
                     fisico_cantidad: payload.fisicoCantidad,
                     sistema_cantidad: result.sistema_cantidad,
                     diferencia: result.diferencia,
-                    recontado_at: new Date().toISOString(),
-                    recontado_por_nombre: (user ? shortEmployeeName(user) : null) || it.recontado_por_nombre,
+                    recontado_at: ahora,
+                    recontado_por_nombre: quien || it.recontado_por_nombre,
+                } : enCero.has(it.id) ? {
+                    ...it,
+                    fisico_primer_conteo: enCero.get(it.id).fisico_primer_conteo,
+                    fisico_cantidad: 0,
+                    sistema_cantidad: enCero.get(it.id).sistema_cantidad,
+                    diferencia: enCero.get(it.id).diferencia,
+                    estado_item: enCero.get(it.id).estado_item,
+                    recontado_at: ahora,
+                    recontado_por_nombre: quien || it.recontado_por_nombre,
                 } : it)));
                 recomputeProductTotals(erpProductId, lines, setLista);
                 return { ...prev, [erpProductId]: lines };
@@ -2226,7 +2290,7 @@ export default function ConteoDetailView() {
         // Si no se puede saber cuánto falta, no se abre: con 0 el diálogo decía
         // «Todo tiene cantidad contada» y se finalizaba a medias sin decidirlo.
         try {
-            setPendientesAlFinalizar(await fetchConteoPendientesCount(id));
+            setPendientesAlFinalizar(await fetchConteoPendientesAlFinalizar(id));
         } catch (err) {
             showToast('No se pudo revisar el conteo', mensajeAmigable(err), 'error');
             return;
@@ -2471,6 +2535,7 @@ export default function ConteoDetailView() {
                     onChange={cambiarFiltro}
                     options={FILTRO_PILLS
                         .filter((f) => verSistema || !f.soloConSistema)
+                        .filter((f) => !f.soloEnRevision || ['FINALIZADO', 'CERRADO'].includes(conteo?.status))
                         .map((f) => ({ value: f.key, label: f.label }))}
                 />
             </FilterBar.Section>
@@ -2497,6 +2562,7 @@ export default function ConteoDetailView() {
 
     return (
         <AjustaElInventario.Provider value={!!conteo?.aplica_en_caja}>
+        <PedirConteoASucursales.Provider value={puedePedirConteo ? setPedirConteoDe : null}>
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de inventario" filtersContent={filtersContent}>
             <div className="px-2 py-4 pb-28 md:p-6 md:pb-6 lg:p-8 space-y-6">
                 {/* ── Con el teléfono acostado, el encabezado se pliega ──────
@@ -2738,7 +2804,7 @@ export default function ConteoDetailView() {
 
                 {recuento && (
                     <Notice variant="info" icon={ShieldCheck}>
-                        Vuelve a contar los productos <strong>con diferencia</strong>, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo.{canRecontarPropio ? ' Puedes recontar también lo que contaste tú.' : ' No puedes recontar lo que contaste tú.'}
+                        Vuelve a contar los productos <strong>con diferencia</strong>, en orden de estante (por laboratorio). No verás el primer conteo ni el sistema hasta guardar el tuyo. Al recontar un producto, el lote que dejes vacío queda en 0.{canRecontarPropio ? ' Puedes recontar también lo que contaste tú.' : ' No puedes recontar lo que contaste tú.'}
                     </Notice>
                 )}
 
@@ -2980,7 +3046,18 @@ export default function ConteoDetailView() {
                 cancelText="Cancelar"
                 isProcessing={busy}
             />
+            {pedirConteoDe && (
+                <Suspense fallback={null}>
+                    <NuevaConsultaExistencia
+                        producto={pedirConteoDe}
+                        motivoInicial={`Diferencia en el conteo de ${conteo?.branches?.name || 'la sucursal'}`}
+                        onCerrar={() => setPedirConteoDe(null)}
+                        onCreada={() => setPedirConteoDe(null)}
+                    />
+                </Suspense>
+            )}
         </GlassViewLayout>
+        </PedirConteoASucursales.Provider>
         </AjustaElInventario.Provider>
     );
 }

@@ -61,7 +61,7 @@ export const CONTEO_INVENTARIO = {
   acciones: [
     'fetchConteosInventario', 'crearConteoInventario', 'eliminarConteoInventario', 'previewMuestraCiclica',
     'fetchConteoDetalle', 'fetchConteoLaboratorios', 'fetchConteoResumen',
-    'sincronizarConteoEnVivo', 'fetchConteoProductItems', 'fetchConteoItemsForProducts', 'fetchConteoPendientesCount',
+    'sincronizarConteoEnVivo', 'fetchConteoProductItems', 'fetchConteoItemsForProducts', 'fetchConteoPendientesAlFinalizar',
     'editarLoteConteoItem', 'guardarConteoItem', 'recontarConteoItem', 'fetchConteoItemHistory',
     'agregarProductoManualConteo', 'finalizarConteoInventario', 'aprobarConteoInventario', 'fetchConteoCaja',
     'fetchConteoCajaPlan', 'fetchReguladosSinLote', 'reintentarConteoCaja', 'marcarAjusteErp',
